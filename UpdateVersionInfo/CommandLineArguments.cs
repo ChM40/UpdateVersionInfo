@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using NDesk.Options;
 using UpdateVersionInfo.Core;
+using ZPF;
 
 namespace UpdateVersionInfo
 {
@@ -40,16 +42,20 @@ namespace UpdateVersionInfo
                     "r|revision=", "A numeric revision number greater than zero.", (int v) => MainViewModel.Current.Revision = v
                 },
                 {
-                    "p|path=", "scan | The path to a C# file to update with version information.", p => MainViewModel.Current.VersionCsPath = p
+                    "p|path=", "scan | The path to a C# file to update with version information.", 
+                                 p => MainViewModel.Current.Files.Add(new FileAndType { Name = "UWP", Target = p })
                 },
                 {
-                    "a|androidManifest=", "The path to an android manifest file to update with version information.", p => MainViewModel.Current.AndroidManifestPath = p
+                    "a|androidManifest=", "The path to an android manifest file to update with version information.", 
+                                 a => MainViewModel.Current.Files.Add(new FileAndType { Name = "Droid", Target = a })
                 },
                 {
-                    "t|touchPlist=", "The path to an iOS plist file to update with version information.", p => MainViewModel.Current.TouchPListPath = p
+                    "t|touchPlist=", "The path to an iOS plist file to update with version information.", 
+                                 t => MainViewModel.Current.Files.Add(new FileAndType { Name = "iOS", Target = t })
                 },
                 {
-                    "n|nuspec=", "The path to an nuspec file to update with version information.", n => MainViewModel.Current.nuspecPath = n
+                    "n|nuspec=", "The path to an nuspec file to update with version information.", 
+                                 n => MainViewModel.Current.Files.Add(new FileAndType { Name = "Nuget", Target = n })
                 }
             };
 
@@ -97,23 +103,58 @@ namespace UpdateVersionInfo
             if (st.ToLower().StartsWith("-p") && (st.ToLower().Contains("scan") || st.ToLower().Contains("auto")))
             {
                MainViewModel.Current.ScanFiles = true;
+               MainViewModel.Current.Files.Clear();
 
                var allFiles = System.IO.Directory.EnumerateFiles(System.IO.Directory.GetCurrentDirectory(), "*.*", System.IO.SearchOption.AllDirectories);
 
                var files = allFiles.Where(
                   x => x.ToLower().Contains(@"\properties\")
                   || x.ToLower().EndsWith(@"\info.plist")
+                  || x.ToLower().EndsWith(@"\package.appxmanifest")
+                  || x.ToLower().EndsWith(@"\versioninfo.cs")
+                  || x.ToLower().EndsWith(@".vdproj")
                   || x.ToLower().EndsWith(@".nuspec")
                   ).ToList();
 
                foreach (var f in files)
                {
+                  if (f.ToLower().EndsWith(@"\versioninfo.cs"))
+                  {
+                     MainViewModel.Current.Files.Insert(0, new FileAndType { Name = "vi", Target = f });
+                  };
+
+                  if (f.StartsWith(@"D:\GitWare\_Nugets_\ZPF_Basics_XF\ZPF_Basics_XF_Sample\ZPF_Basics_XF_Sample.UWP\Properties"))
+                  {
+                     Debugger.Break();
+                  };
+
                   if (UWPHelper.IsValid(f))
                   {
-                     if (System.IO.Directory.EnumerateFiles(System.IO.Path.GetDirectoryName(f), "Default.rd.xml", System.IO.SearchOption.TopDirectoryOnly).Count() == 1)
+                     if (f.ToLower().EndsWith(@"\assemblyinfo.cs"))
                      {
-                        MainViewModel.Current.VersionCsPath = f;
-                        _args2[_args2.IndexOf(st)] = $"-p={f}";
+                        if (System.IO.Directory.EnumerateFiles(System.IO.Path.GetDirectoryName(f), "Default.rd.xml", System.IO.SearchOption.TopDirectoryOnly).Count() == 1)
+                        {
+                           MainViewModel.Current.Files.Add(new FileAndType { Name = "UWP", Target = f });
+                           //MainViewModel.Current.VersionCsPath = f;
+
+                           try
+                           {
+                              _args2[_args2.IndexOf(st)] = $"-p={f}";
+                           }
+                           catch { };
+                        };
+                     };
+
+                     if (f.ToLower().EndsWith(@"\package.appxmanifest"))
+                     {
+                        MainViewModel.Current.Files.Add(new FileAndType { Name = "UWP", Target = f });
+                        //MainViewModel.Current.VersionCsPath = f;
+
+                        //try
+                        //{
+                        //   _args2[_args2.IndexOf(st)] = $"-p={f}";
+                        //}
+                        //catch { };
                      };
                   };
 
@@ -121,7 +162,8 @@ namespace UpdateVersionInfo
                   {
                      if (System.IO.Directory.EnumerateFiles(System.IO.Path.GetDirectoryName(f), "AndroidManifest.xml", System.IO.SearchOption.TopDirectoryOnly).Count() == 1)
                      {
-                        MainViewModel.Current.AndroidManifestPath = f;
+                        MainViewModel.Current.Files.Add(new FileAndType { Name = "Droid", Target = f });
+                        //MainViewModel.Current.AndroidManifestPath = f;
                      };
                   };
 
@@ -130,6 +172,7 @@ namespace UpdateVersionInfo
                   //if (System.IO.Directory.EnumerateFiles(System.IO.Path.GetDirectoryName(f), "Settings.settings", System.IO.SearchOption.TopDirectoryOnly).Count() == 1)
                   //{
                   //   MainViewModel.Current.WPFAssemblyInfoPath = f;
+                  //MainViewModel.Current.Files.Add(new FileAndType { Name = "WPF", Value = f });
                   //};
                   //};
 
@@ -137,7 +180,8 @@ namespace UpdateVersionInfo
                   {
                      if (System.IO.File.ReadAllText(f).ToLower().Contains("minimumosversion"))
                      {
-                        MainViewModel.Current.TouchPListPath = f;
+                        MainViewModel.Current.Files.Add(new FileAndType { Name = "iOS", Target = f });
+                        //MainViewModel.Current.TouchPListPath = f;
                      };
                   };
 
@@ -146,12 +190,19 @@ namespace UpdateVersionInfo
                   //   if (System.IO.File.ReadAllText(f).ToLower().Contains("lsminimumsystemversion"))
                   //   {
                   //      MainViewModel.Current.MacPListPath = f;
+                  //MainViewModel.Current.Files.Add(new FileAndType { Name = "MacOS", Value = f });
                   //   };
                   //};
 
                   if (NugetHelper.IsValid(f))
                   {
-                     MainViewModel.Current.nuspecPath = f;
+                     //MainViewModel.Current.nuspecPath = f;
+                     MainViewModel.Current.Files.Add(new FileAndType { Name = "Nuget", Target = f });
+                  }; 
+                  
+                  if ( DeployProjectHelper.IsValid(f))
+                  {
+                     MainViewModel.Current.Files.Add(new FileAndType { Name = "Setup", Target = f });
                   };
                };
             };
@@ -168,3 +219,4 @@ namespace UpdateVersionInfo
       }
    }
 }
+

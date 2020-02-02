@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using ZPF;
 
 namespace UpdateVersionInfo.Core
 {
@@ -23,7 +25,7 @@ namespace UpdateVersionInfo.Core
 
       // - - -  - - - 
 
-      public String UpdateVersionInfoVersion { get; } = "1.0.0";
+      public String UpdateVersionInfoVersion { get; } = "1.0.6";
 
       // - - -  - - - 
 
@@ -54,11 +56,35 @@ namespace UpdateVersionInfo.Core
       /// Scan files & folder and sets paths automaticaly.
       /// </summary>
       public bool ScanFiles { get; set; } = false;
+      public List<FileAndType> Files { get; set; } = new List<FileAndType>();
 
       /// <summary>
       /// Displays current version info.
       /// </summary>
       public bool Info { get; set; } = false;
+
+      /// <summary>
+      /// Displays more detailed info
+      /// </summary>
+      public bool Verbose { get; set; } = true;
+
+      // - - -  - - - 
+
+      public string IncVersion(string v1)
+      {
+         var vl = v1.Split(new char[] { '.' });
+
+         if (vl.Length == 3)
+         {
+            var v = new Version(v1+".0");
+            return $"{v.Major}.{v.Minor}.{v.Build}";
+         }
+         else
+         {
+            var v = new Version(v1);
+            return $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision + 1}";
+         };
+      }
 
       // - - -  - - - 
    }

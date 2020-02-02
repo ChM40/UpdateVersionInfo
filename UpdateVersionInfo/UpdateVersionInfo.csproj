@@ -46,6 +46,9 @@
     <Compile Include="..\UpdateVersionInfo.Core\Helper\AppleHelper.cs">
       <Link>Core\AppleHelper.cs</Link>
     </Compile>
+    <Compile Include="..\UpdateVersionInfo.Core\Helper\DeployProjectHelper.cs">
+      <Link>Core\DeployProjectHelper.cs</Link>
+    </Compile>
     <Compile Include="..\UpdateVersionInfo.Core\Helper\DroidHelper.cs">
       <Link>Core\DroidHelper.cs</Link>
     </Compile>
@@ -57,6 +60,15 @@
     </Compile>
     <Compile Include="..\UpdateVersionInfo.Core\Helper\UWPHelper.cs">
       <Link>Core\UWPHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\UpdateVersionInfo.Core\Helper\_VI_Helper.cs">
+      <Link>Core\_VI_Helper.cs</Link>
+    </Compile>
+    <Compile Include="..\UpdateVersionInfo.Core\Models\FileAndType.cs">
+      <Link>Models\FileAndType.cs</Link>
+    </Compile>
+    <Compile Include="..\UpdateVersionInfo.Core\Template\Template.cs">
+      <Link>Template\Template.cs</Link>
     </Compile>
     <Compile Include="..\UpdateVersionInfo.Core\ViewModels\MainViewModel.cs">
       <Link>Core\MainViewModel.cs</Link>
@@ -71,6 +83,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetPath) D:\GitWare\Apps\VS-LittleHelpers\UpdateVersionInfo\XFTestPlatformes\$(TargetFileName) /y</PostBuildEvent>
+    <PostBuildEvent>copy $(TargetPath) D:\GitWare\Apps\UpdateVersionInfo\XFTestPlatformes\$(TargetFileName) /y</PostBuildEvent>
   </PropertyGroup>
 </Project>

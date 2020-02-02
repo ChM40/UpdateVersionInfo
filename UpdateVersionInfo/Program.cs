@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using System.Xml.XPath;
 using UpdateVersionInfo.Core;
 
 namespace UpdateVersionInfo
@@ -22,59 +15,100 @@ namespace UpdateVersionInfo
       {
          commandLine = new CommandLineArguments(args);
 
+         if (!MainViewModel.Current.Silent)
+         {
+            Console.WriteLine("");
+            Console.WriteLine($"UpdateVersionInfo - V{MainViewModel.Current.UpdateVersionInfoVersion}");
+            Console.WriteLine("");
+         };
+
          if (ValidateCommandLine(commandLine))
          {
-            if (!MainViewModel.Current.Silent)
-            {
-               Console.WriteLine("");
-               Console.WriteLine($"UpdateVersionInfo - V{MainViewModel.Current.UpdateVersionInfoVersion}");
-               Console.WriteLine("");
-            };
-
             if (MainViewModel.Current.Info)
             {
-               if (!String.IsNullOrEmpty(MainViewModel.Current.VersionCsPath))
+               string formatStr = (MainViewModel.Current.Verbose
+                  ? "{0,6} {1,-10} - {2}"
+                  : "{0,6} {1,-10}");
+
+
+               foreach (var f in MainViewModel.Current.Files)
                {
-                  UWPHelper.GetVersion(MainViewModel.Current.VersionCsPath);
-
-                  if (!MainViewModel.Current.Silent)
+                  if (System.IO.File.Exists(f.Target))
                   {
-                     Console.WriteLine($"UWP   {UWPHelper.LastMessage}");
+
+                     switch (f.Name)
+                     {
+                        case "vi":
+                           _VI_Helper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "", _VI_Helper.LastMessage, f.Target);
+                           };
+                           break;
+
+                        case "UWP":
+                           UWPHelper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "UWP", UWPHelper.LastMessage, f.Target);
+                           };
+                           break;
+
+                        case "Droid":
+                           DroidHelper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "Droid", DroidHelper.LastMessage, f.Target);
+                           };
+                           break;
+
+                        case "WPF":
+                           break;
+
+                        case "iOS":
+                           iOSHelper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "iOS", iOSHelper.LastMessage, f.Target);
+                           };
+                           break;
+
+                        case "MacOS":
+                           break;
+
+                        case "Nuget":
+                           NugetHelper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "Nuget", NugetHelper.LastMessage, f.Target);
+                           };
+                           break;
+
+                        case "Setup":
+                           DeployProjectHelper.GetVersion(f.Target);
+
+                           if (!MainViewModel.Current.Silent)
+                           {
+                              Console.WriteLine(formatStr, "Setup", DeployProjectHelper.LastMessage, f.Target);
+                           };
+                           break;
+                     };
+
                   };
-               }
-
-               if (!String.IsNullOrEmpty(MainViewModel.Current.AndroidManifestPath))
-               {
-                  DroidHelper.GetVersion(MainViewModel.Current.AndroidManifestPath);
-
-                  if (!MainViewModel.Current.Silent)
-                  {
-                     Console.WriteLine($"Droid {DroidHelper.LastMessage}");
-                  };
-               }
-
-               if (!String.IsNullOrEmpty(MainViewModel.Current.TouchPListPath))
-               {
-                  iOSHelper.GetVersion(MainViewModel.Current.TouchPListPath );
-
-                  if (!MainViewModel.Current.Silent)
-                  {
-                     Console.WriteLine($"iOS   {iOSHelper.LastMessage}");
-                  };
-               }
-
-               if (!String.IsNullOrEmpty(MainViewModel.Current.nuspecPath))
-               {
-                  NugetHelper.GetVersion(MainViewModel.Current.nuspecPath);
-
-                  if (!MainViewModel.Current.Silent)
-                  {
-                     Console.WriteLine($"Nuget {NugetHelper.LastMessage}");
-                  };
-               }
+               };
             }
             else
             {
+               string formatStr = (MainViewModel.Current.Verbose
+                  ? "{0,6} {1,-24} - {2}"
+                  : "{0,6} {1,-24}");
+
+
                try
                {
                   Version version = new Version(
@@ -83,46 +117,75 @@ namespace UpdateVersionInfo
                       MainViewModel.Current.Build.Value,
                       MainViewModel.Current.Revision.HasValue ? MainViewModel.Current.Revision.Value : 0);
 
-                  UWPHelper.Update(MainViewModel.Current.VersionCsPath, version);
-                  if (!MainViewModel.Current.Silent)
+                  foreach (var f in MainViewModel.Current.Files)
                   {
-                     Console.WriteLine($"UWP   {UWPHelper.LastMessage}");
+                     if (System.IO.File.Exists(f.Target))
+                     {
+
+                        switch (f.Name)
+                        {
+                           case "vi":
+                              version = _VI_Helper.Update(f.Target);
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "", _VI_Helper.LastMessage, f.Target);
+                              };
+                              break;
+
+                           case "UWP":
+                              UWPHelper.Update(f.Target, version);
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "UWP", UWPHelper.LastMessage, f.Target);
+                              };
+                              break;
+
+                           case "Droid":
+                              DroidHelper.Update(f.Target, version);
+
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "Droid", DroidHelper.LastMessage, f.Target);
+                              };
+                              break;
+
+                           case "WPF":
+                              break;
+
+                           case "iOS":
+                              iOSHelper.Update(f.Target, version);
+
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "iOS", iOSHelper.LastMessage, f.Target);
+                              };
+                              break;
+
+                           case "MacOS":
+                              break;
+
+                           case "Nuget":
+                              NugetHelper.Update(f.Target, version);
+
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "Nuget", NugetHelper.LastMessage, f.Target);
+                              };
+                              break;
+
+                           case "Setup":
+                              DeployProjectHelper.Update(f.Target, version);
+
+                              if (!MainViewModel.Current.Silent)
+                              {
+                                 Console.WriteLine(formatStr, "Setup", DeployProjectHelper.LastMessage, f.Target);
+                              };
+                              break;
+                        };
+
+                     };
                   };
 
-                  if (MainViewModel.Current.AutoVersion)
-                  {
-                     version = new Version(MainViewModel.Current.sAutoVersionV2);
-                  };
-
-                  if (!String.IsNullOrEmpty(MainViewModel.Current.AndroidManifestPath))
-                  {
-                     DroidHelper.Update(MainViewModel.Current.AndroidManifestPath, version);
-
-                     if (!MainViewModel.Current.Silent)
-                     {
-                        Console.WriteLine($"Droid {DroidHelper.LastMessage}");
-                     };
-                  }
-
-                  if (!String.IsNullOrEmpty(MainViewModel.Current.TouchPListPath))
-                  {
-                     iOSHelper.Update(MainViewModel.Current.TouchPListPath, version);
-
-                     if (!MainViewModel.Current.Silent)
-                     {
-                        Console.WriteLine($"iOS   {iOSHelper.LastMessage}");
-                     };
-                  }
-
-                  if (!String.IsNullOrEmpty(MainViewModel.Current.nuspecPath))
-                  {
-                     NugetHelper.Update(MainViewModel.Current.nuspecPath, version);
-
-                     if (!MainViewModel.Current.Silent)
-                     {
-                        Console.WriteLine($"Nuget {NugetHelper.LastMessage}");
-                     };
-                  }
                }
                catch (Exception e)
                {
@@ -162,20 +225,23 @@ namespace UpdateVersionInfo
             errors.AppendLine("You must supply a numeric build number.");
          }
 
-         if (String.IsNullOrEmpty(MainViewModel.Current.VersionCsPath) || !UWPHelper.IsValid(MainViewModel.Current.VersionCsPath))
+         if (!MainViewModel.Current.ScanFiles)
          {
-            errors.AppendLine("You must supply valid path to a writable C# file containing assembly version information.");
-         }
+            if (!String.IsNullOrEmpty(MainViewModel.Current.VersionCsPath) && !UWPHelper.IsValid(MainViewModel.Current.VersionCsPath))
+            {
+               errors.AppendLine("You must supply valid path to a writable C# file containing assembly version information.");
+            };
 
-         if (!String.IsNullOrEmpty(MainViewModel.Current.AndroidManifestPath) && !DroidHelper.IsValid(MainViewModel.Current.AndroidManifestPath))
-         {
-            errors.AppendLine("You must supply valid path to a writable android manifest file.");
-         }
+            if (!String.IsNullOrEmpty(MainViewModel.Current.AndroidManifestPath) && !DroidHelper.IsValid(MainViewModel.Current.AndroidManifestPath))
+            {
+               errors.AppendLine("You must supply valid path to a writable android manifest file.");
+            };
 
-         if (!String.IsNullOrEmpty(MainViewModel.Current.TouchPListPath) && !iOSHelper.IsValid(MainViewModel.Current.TouchPListPath))
-         {
-            errors.AppendLine("You must supply valid path to a writable plist file containing version information.");
-         }
+            if (!String.IsNullOrEmpty(MainViewModel.Current.TouchPListPath) && !iOSHelper.IsValid(MainViewModel.Current.TouchPListPath))
+            {
+               errors.AppendLine("You must supply valid path to a writable plist file containing version information.");
+            };
+         };
 
          if (errors.Length > 0)
          {
